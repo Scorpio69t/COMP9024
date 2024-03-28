@@ -147,6 +147,9 @@ void list_remove(list, string);
  */
 bool list_contains(list, string);
 
+
+void showList(list);
+
 #endif // LIST_H
 
 /*************************** DO NOT CHANGE THIS FILE ***************************
