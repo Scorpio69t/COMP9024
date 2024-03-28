@@ -1,0 +1,14 @@
+struct can be nested in another struct
+tydedef struct {
+	int day,month;} DateT;
+tydedef struct {
+	int hour, minute;} TimeT;
+tydedef struct {
+	char plate[7];
+	double speed;
+	DateT d;
+	TimeT t;} TicketT;
+	
+	
+- Defining a structured data type itself does not allocate a memory
+- 

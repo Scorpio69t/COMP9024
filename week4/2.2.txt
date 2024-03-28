@@ -1,0 +1,36 @@
+typedef struct {
+   int   studentID;
+   int   age;
+   char  gender;
+   float WAM;
+} PersonT;
+
+PersonT per1;
+PersonT per2;
+PersonT *ptr;
+
+ptr = &per1;   ptr to per1
+per1.studentID = 3141592; 
+ptr->gender = 'M'; per1.gender = 'M'
+ptr = &per2; ptr to per2
+ptr->studentID = 2718281; per2.studentID = 2718281
+ptr->gender = 'F'; per2.gender = 'F'
+per1.age = 25; 
+per2.age = 24;
+ptr = &per1; ptr to per1
+per2.WAM = 86.0; 
+ptr->WAM = 72.625; per1.WAM = 72.625
+
+per1 {
+    studentID: 3141592;
+    age = 25;
+    gender = 'M';
+    WAM = 72.625
+}
+
+per2 {
+    studentID = 2718281;
+    age = 24;
+    gender = 'F';
+    WAM = 86.0;
+}

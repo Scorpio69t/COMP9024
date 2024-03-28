@@ -1,0 +1,8 @@
+for i=1 to n do
+    for j=i+1 to n do
+        if A[i] + A[j] = v then
+            return true
+        endif
+    endfor
+endfor
+return false

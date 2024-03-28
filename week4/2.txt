@@ -1,0 +1,120 @@
+Consider the following piece of code:
+
+int a = 5;                    // line 1
+int b = 123;                  // line 2
+
+int *pa = &a;                 // line 4
+int *pb = &b;                 // line 5
+
+*pa = 6;                      // line 7
+*pb = 234;                    // line 8
+
+int c = *pa;                  // line 10
+*pa = *pb;                    // line 11
+*pb = c;                      // line 12
+
+pa = pb;                      // line 14
+*pa = 345;                    // line 15
+What is the state of memory after each line of code is executed?
+
+
+
+Let's go through each line of code and analyze the state of memory after each line:
+
+1. int a = 5;
+
+This line declares an integer variable a and initializes it with the value 5.
+Memory:
+a has the value 5.
+
+2. int b = 123;
+
+This line declares an integer variable b and initializes it with the value 123.
+Memory:
+a has the value 5.
+b has the value 123.
+
+3.int *pa = &a;
+
+This line declares an integer pointer pa and initializes it with the address of variable a.
+Memory:
+a has the value 5.
+b has the value 123.
+pa points to the memory address of a.
+
+4. int *pb = &b;
+
+This line declares an integer pointer pb and initializes it with the address of variable b.
+Memory:
+a has the value 5.
+b has the value 123.
+pa points to the memory address of a.
+pb points to the memory address of b.
+
+5. *pa = 6;
+
+This line changes the value stored at the memory address pointed to by pa to 6 (i.e., it changes the value of a to 6).
+Memory:
+a has the value 6.
+b has the value 123.
+pa points to the memory address of a.
+pb points to the memory address of b.
+
+6. *pb = 234;
+
+This line changes the value stored at the memory address pointed to by pb to 234 (i.e., it changes the value of b to 234).
+Memory:
+a has the value 6.
+b has the value 234.
+pa points to the memory address of a.
+pb points to the memory address of b.
+
+7. int c = *pa;
+
+This line declares an integer variable c and initializes it with the value stored at the memory address pointed to by pa (i.e., the value of a).
+Memory:
+a has the value 6.
+b has the value 234.
+c has the value 6.
+pa points to the memory address of a.
+pb points to the memory address of b.
+
+8. *pa = *pb;
+
+This line changes the value stored at the memory address pointed to by pa to the value stored at the memory address pointed to by pb (i.e., it changes the value of a to 234).
+Memory:
+a has the value 234.
+b has the value 234.
+c has the value 6.
+pa points to the memory address of a.
+pb points to the memory address of b.
+
+9. *pb = c;
+
+This line changes the value stored at the memory address pointed to by pb to the value of c (i.e., 6).
+Memory:
+a has the value 234.
+b has the value 6.
+c has the value 6.
+pa points to the memory address of a.
+pb points to the memory address of b.
+
+10. pa = pb;
+
+This line assigns the value of pb to pa, so now pa points to the memory address of b.
+Memory:
+a has the value 234.
+b has the value 6.
+c has the value 6.
+pa points to the memory address of b.
+pb points to the memory address of b.
+
+11. *pa = 345;
+
+This line changes the value stored at the memory address pointed to by pa to 345 (i.e., it changes the value of b to 345).
+Memory:
+a has the value 234.
+b has the value 345.
+c has the value 6.
+pa points to the memory address of b.
+pb points to the memory address of b.
