@@ -5,8 +5,8 @@
 #include "list.h"
 
 typedef struct ListNode {
-    string s;
-    struct ListNode *prev, *next;
+    string value;
+    struct ListNode *next;
 } ListNode ;
 
 typedef struct List_Repr {
@@ -14,15 +14,6 @@ typedef struct List_Repr {
     ListNode *bot;
     int size;
 } List_Repr;
-
-ListNode *create_node(string s){
-    ListNode *node = malloc(sizeof(ListNode));
-    assert(node!=NULL);
-    node->next = NULL;
-    node->prev = NULL;
-    node->s = s;
-    return node;
-}
 
 list list_create(void) {
     list L = malloc(sizeof(List_Repr));
@@ -36,21 +27,21 @@ list list_create(void) {
         return L;
     }
 }
-
 void list_destroy(list L){
-    if (L==NULL) return;
-    ListNode *current = L->bot;
-    int d = L->size;
-    while (d>1) {
-        ListNode *temp = current->next;
-        free(current);
-        current = temp;
-        current->prev = NULL;
-        L->bot = current;
-        d--;
+    if (L!=NULL) {
+        if (L->size == 0) free(L);
+        else {
+        ListNode *current = L->top;
+        while (current != NULL) {
+            ListNode *temp = current->next;
+            free(current->value);
+            free(current);
+            current = temp;
+        }
+        free(L);
+        }
+
     }
-    free(L->top);
-    free(L);
 }
 
 bool list_is_empty(list L) {
@@ -65,107 +56,131 @@ size_t list_length(list L) {
 
 void list_push(list L, string s) {
     if (L==NULL || s==NULL) return;
-    ListNode *node = create_node(s);
-    if (L->size == 0) {
-        L->top = node;
+    ListNode *node = malloc(sizeof(ListNode));
+    size_t data_len = strlen(s);
+    node->value = malloc((data_len + 1) * sizeof(char));
+    strcpy(node->value, s);
+    node->next = L->top;
+    L->top = node;
+    if (L->bot == NULL) {
         L->bot = node;
-        node->next = NULL;
-        node->prev = NULL;
-    }
-    else {
-        node->next = NULL;
-        node->prev = L->top;
-        L->top->next = node;
-        L->top = node;
     }
     L->size++;
-
 }
 
 string list_pop(list L) {
     if (L!=NULL) {
         if (list_is_empty(L)) return NULL;
         else {
-            showList(L);
-            int d = L->size;
-            d = d-1;
-            L->size = d;
-            ListNode *current = L->top;
-            string s = current->s;
-            if (L->top == NULL) {
-                L->bot = NULL;
-            }
-            current->prev->next = NULL;
-            L->top = current->prev;
-            return s;
+            ListNode *temp = L->top;
+            string popped = temp->value;
+            L->top = temp->next;
+            free(temp);
+            L->size--;
+            return popped;
         }
     }
     else return NULL;
 }
 
 void list_enqueue(list L, string s) {
-    if (L==NULL || s==NULL) return ;
-    list_push(L, s);
+    if (L==NULL || s==NULL) return;
+    ListNode *node = malloc(sizeof(ListNode));
+    assert(node!=NULL);
+    node->next = NULL;
+    size_t data_len = strlen(s);
+    node->value = malloc((data_len + 1) * sizeof(char));
+    assert(node->value!=NULL);
+    strcpy(node->value, s);
+    if (L->top != NULL) {
+        L->top->next = node;
+        L->top = node;
+    }
+    else {
+        L->top = node;
+    }
+    if (L->bot==NULL){
+        L->bot = node;
+    }
+    L->size++;
 }
 
 string list_dequeue(list L) {
     if (L != NULL) {
         if (list_is_empty(L)) return NULL;
         else {
-            int d = L->size;
-            d = d-1;
-            L->size = d;
-            ListNode *current = L->bot;
-            string s = current->s;
-            if (L->bot == NULL) {
-                L->top = NULL;
-            }
-            L->bot = current->next;
-            current->next->prev = NULL;
-            return s;
+            ListNode *temp = L->bot;
+            string popped = temp->value;
+            L->bot = temp->next;
+            free(temp);
+            L->size--;
+            return popped;
         }
     }
     else return NULL;
 }
 
-void showList(list L) {
-    ListNode *current = L->top;
-    ListNode *top = L->top;
-    ListNode *bot = L->bot;
-    int d = L->size;
-    printf("Number is %d\n", d);
-    printf("Bot is %s\n", bot->s);
-    printf("Top is %s\n", top->s);
-
-    while (current != NULL) {
-        string s=current->s;
-        printf("element is: %s \n", s);
-        // if (current->prev!=NULL) printf("prev is: %s \n", current->prev->s);
-        // if (current->next!=NULL) printf("next is: %s \n", current->next->s);
-        
-        current = current->prev;
-    }
-}
-
 bool list_contains(list L, string s) {
-    assert(s != NULL);
-    ListNode *current = L->bot;
-    while (current != NULL) {
-        if (current->s == s) {
+    if (L == NULL || s == NULL) {
+        return false;
+    }
+
+    ListNode* temp = L->top;
+    while (temp != NULL) {
+        if (strcmp(temp->value, s) == 0) {
             return true;
         }
-        current = current->next;
+        temp = temp->next;
     }
     return false;
 }
 
 void list_add(list L, string s) {
-    if (L != NULL || s != NULL || !list_contains(L, s)) {
-        return; 
+    if (L != NULL && s != NULL && !list_contains(L, s)) {
+        ListNode *node = malloc(sizeof(ListNode));
+        assert(node!=NULL);
+        int data_len = strlen(s);
+        node->value = malloc((data_len+1)*sizeof(char));
+        assert(node->value != NULL);
+        strcpy(node->value, s);
+        node->next = NULL;
+        if (L->bot == NULL) {
+            L->top = node;
+        } else {
+            L->bot->next = node;
+        }
+        L->bot = node;
+        L->size++;
     }
 }
 
 void list_remove(list L, string s) {
-    return;
+    if (L != NULL && s != NULL && list_contains(L,s)) {
+        ListNode *temp = L->top;
+        ListNode *prev=NULL;
+        while (temp!=NULL) {
+            if (strcmp(temp->value, s) == 0) {
+                if (prev == NULL) {
+                    L->top = temp->next;
+                    if (L->bot == temp) {
+                        L->bot = NULL;
+                    }
+                }
+                else {
+                prev->next = temp->next;
+                if (L->bot == temp) {
+                    L->bot = prev;
+                    }
+                }
+                free(temp->value);
+                free(temp);
+                L->size--;
+                return;
+            }
+            else {
+                prev = temp;
+                temp = temp->next;
+            }
+        }
+    }
 }
-
