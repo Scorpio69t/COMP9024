@@ -6,15 +6,15 @@
 #include "graph.h"
 #include "list.h"
 
-typedef struct ListNode {
+typedef struct Node {
     string vertex;
     int weight;
-    struct ListNode *next;
-} ListNode ;
+    struct Node *next;
+} Node ;
 
 typedef struct Graph_Repr {
-    ListNode **edges;
-    int nV;
+    Node **edges; // Adjacency list storing positive weights and vertex label
+    int nV;  // Number of vertices
 } Graph_Repr;
 
 graph graph_create(void) {
@@ -47,15 +47,15 @@ void graph_show(graph g, FILE *f, list L){
         }
         int i;
         for (i=0; i<g->nV; i++) {
-            ListNode *vertex = g->edges[i];
+            Node *vertex = g->edges[i];
             if (!list_contains(L, vertex->vertex)) {
                 fprintf(f, "%s\n", vertex->vertex);
             }
         }
         list dest = list_create();
         for (i=0; i<g->nV; i++) {
-            ListNode *vertex = g->edges[i];
-            ListNode *adj;
+            Node *vertex = g->edges[i];
+            Node *adj;
             if (!list_contains(L, vertex->vertex)) {
                 for (adj = vertex->next; adj!=NULL; adj=adj->next) {
                     if (!list_contains(L, adj->vertex)) {
@@ -76,13 +76,16 @@ void graph_show(graph g, FILE *f, list L){
 
 void graph_add_vertex(graph g, string vertex) {
     if (g != NULL && vertex != NULL && !graph_has_vertex(g, vertex) ) {
-        ListNode *new_vertex = malloc(sizeof(ListNode));
+        Node *new_vertex = malloc(sizeof(Node));
         assert(new_vertex != NULL);
+        //Labelling vertex to new_vertex
         size_t vertex_leng = strlen(vertex);
         new_vertex->vertex = malloc((vertex_leng+1)*sizeof(char));
         strcpy(new_vertex->vertex, vertex);
+
         new_vertex->next = NULL;
-        g->edges = (ListNode **)realloc(g->edges, (g->nV + 1) * sizeof(ListNode *));
+        // allocate memory for each row
+        g->edges = malloc((g->nV + 1) * sizeof(Node *));
         assert(g->edges != NULL);
         g->edges[g->nV] = new_vertex;
         g->nV++;
@@ -108,9 +111,9 @@ size_t graph_vertices_count(graph g) {
 
 void graph_add_edge(graph g, string v, string w, size_t weight) {
     if (g!=NULL && v!=NULL && w!=NULL && !graph_has_edge(g, v, w)) {
-        ListNode *src_node = NULL;
-        ListNode *dest_node = NULL;
-        ListNode *new_edge = (ListNode *)malloc(sizeof(ListNode));
+        Node *src_node = NULL;
+        Node *dest_node = NULL;
+        Node *new_edge = malloc(sizeof(Node));
         assert(new_edge!=NULL);
         for (int i = 0; i < g->nV; ++i) {
             if (strcmp(g->edges[i]->vertex, v) == 0) {
@@ -132,9 +135,9 @@ bool graph_has_edge(graph g, string source, string dest) {
 
     for (int i = 0; i < g->nV; ++i) {
         if (strcmp(g->edges[i]->vertex, source) == 0) {
-            ListNode *src_node = g->edges[i];
+            Node *src_node = g->edges[i];
             
-            for (ListNode *adj = src_node->next; adj != NULL; adj = adj->next) {
+            for (Node *adj = src_node->next; adj != NULL; adj = adj->next) {
                 if (strcmp(adj->vertex, dest) == 0) {
                     return true;
                 }
@@ -149,8 +152,8 @@ void graph_set_edge(graph g, string v, string w, size_t weight) {
     if (g!=NULL && v!=NULL && w!=NULL && graph_has_edge(g, v, w)) {
         for (int i = 0; i < g->nV; ++i) {
             if (strcmp(g->edges[i]->vertex, v) == 0) {
-                ListNode *src_node = g->edges[i];
-                for (ListNode *adj = src_node->next; adj != NULL; adj = adj->next) {
+                Node *src_node = g->edges[i];
+                for (Node *adj = src_node->next; adj != NULL; adj = adj->next) {
                     if (strcmp(adj->vertex, w) == 0) {
                         adj->weight = weight;
                         return; 
@@ -166,9 +169,9 @@ size_t graph_get_edge(graph g, string source, string dest) {
     if (g == NULL || source == NULL || dest == NULL) return 0;
     for (int i = 0; i < g->nV; ++i) {
         if (strcmp(g->edges[i]->vertex, source) == 0) {
-            ListNode *src_node = g->edges[i];
+            Node *src_node = g->edges[i];
             
-            for (ListNode *adj = src_node->next; adj != NULL; adj = adj->next) {
+            for (Node *adj = src_node->next; adj != NULL; adj = adj->next) {
                 if (strcmp(adj->vertex, dest) == 0) {
                     return adj->weight;
                 }
@@ -184,8 +187,8 @@ size_t graph_edges_count(graph g, string vertex) {
     for (int i = 0; i < g->nV; ++i) {
         if (strcmp(g->edges[i]->vertex, vertex) == 0) {
             size_t count = 0;
-            ListNode *src_node = g->edges[i];
-            for (ListNode *adj = src_node->next; adj != NULL; adj = adj->next) {
+            Node *src_node = g->edges[i];
+            for (Node *adj = src_node->next; adj != NULL; adj = adj->next) {
                 ++count;
             }
             return count;
