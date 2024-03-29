@@ -112,7 +112,7 @@ string list_dequeue(list L) {
             ListNode *temp = L->bot;
             string popped = temp->value;
             L->bot = temp->next;
-            free(temp);
+            // free(temp);
             L->size--;
             return popped;
         }
@@ -121,16 +121,15 @@ string list_dequeue(list L) {
 }
 
 bool list_contains(list L, string s) {
-    if (L == NULL || s == NULL) {
-        return false;
-    }
-
-    ListNode* temp = L->top;
-    while (temp != NULL) {
-        if (strcmp(temp->value, s) == 0) {
-            return true;
+    if (L != NULL && s != NULL) {
+        ListNode* temp = L->top;
+        while (temp != NULL) {
+            if (strcmp(temp->value, s) == 0) {
+                return true;
+            }
+            temp = temp->next;
         }
-        temp = temp->next;
+        return false;
     }
     return false;
 }
