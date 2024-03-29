@@ -52,25 +52,17 @@ void graph_show(graph g, FILE *f, list L){
                 fprintf(f, "%s\n", vertex->vertex);
             }
         }
-        list dest = list_create();
         for (i=0; i<g->nV; i++) {
-            Node *vertex = g->edges[i];
+            Node *head = g->edges[i];
             Node *adj;
-            if (!list_contains(L, vertex->vertex)) {
-                for (adj = vertex->next; adj!=NULL; adj=adj->next) {
+            if (!list_contains(L, head->vertex)) {
+                for (adj = head->next; adj!=NULL; adj=adj->next) {
                     if (!list_contains(L, adj->vertex)) {
-                        list_push(dest, adj->vertex);
+                        fprintf(f, "%s %s %d\n", head->vertex, adj->vertex, adj->weight);
                     }
-                }
-                int j;
-                int k=list_length(dest);
-                for(j=0; j<k; j++){
-                    string des = list_pop(dest);
-                    fprintf(f, "%s %s %zu\n", vertex->vertex, des, graph_get_edge(g, vertex->vertex, des));
                 }
             }
         }
-        list_destroy(dest);
     }
 }
 
@@ -84,8 +76,8 @@ void graph_add_vertex(graph g, string vertex) {
         strcpy(new_vertex->vertex, vertex);
 
         new_vertex->next = NULL;
-        // allocate memory for each row
-        g->edges = malloc((g->nV + 1) * sizeof(Node *));
+        // allocate memory for each row to another bigger memory
+        g->edges = realloc(g->edges, (g->nV + 1) * sizeof(Node *));
         assert(g->edges != NULL);
         g->edges[g->nV] = new_vertex;
         g->nV++;
@@ -110,89 +102,116 @@ size_t graph_vertices_count(graph g) {
 }
 
 void graph_add_edge(graph g, string v, string w, size_t weight) {
-    if (g!=NULL && v!=NULL && w!=NULL && !graph_has_edge(g, v, w)) {
+    if (g!=NULL && v!=NULL && w!=NULL && !graph_has_edge(g, v, w) && graph_has_vertex(g, v) && graph_has_vertex(g, w)) {
         Node *src_node = NULL;
-        Node *dest_node = NULL;
         Node *new_edge = malloc(sizeof(Node));
         assert(new_edge!=NULL);
         for (int i = 0; i < g->nV; ++i) {
             if (strcmp(g->edges[i]->vertex, v) == 0) {
                 src_node = g->edges[i];
-            }
-            if (strcmp(g->edges[i]->vertex, w) == 0) {
-                dest_node = g->edges[i];
+                break;
             }
         }
-        new_edge->vertex = dest_node->vertex;
+        int data_length = strlen(w);
+        new_edge->vertex = malloc((data_length+1)*sizeof(char));
+        strcpy(new_edge->vertex, w);
         new_edge->weight = weight;
-        new_edge->next = src_node->next;
-        src_node->next = new_edge;
-    }
-}
-
-bool graph_has_edge(graph g, string source, string dest) {
-    if (g == NULL || source == NULL || dest == NULL) return false;
-
-    for (int i = 0; i < g->nV; ++i) {
-        if (strcmp(g->edges[i]->vertex, source) == 0) {
-            Node *src_node = g->edges[i];
-            
-            for (Node *adj = src_node->next; adj != NULL; adj = adj->next) {
-                if (strcmp(adj->vertex, dest) == 0) {
-                    return true;
-                }
+        new_edge->next = NULL;
+        if (src_node->next==NULL) {
+            src_node->next = new_edge;
+        }
+        else {
+            Node *current = src_node->next;
+            while (current->next != NULL) {
+                current = current->next;
             }
-            break; 
+            current->next = new_edge;
         }
     }
-    return false; 
 }
 
-void graph_set_edge(graph g, string v, string w, size_t weight) {
-    if (g!=NULL && v!=NULL && w!=NULL && graph_has_edge(g, v, w)) {
+bool graph_has_edge(graph g, string v, string w) {
+    if (g != NULL || v != NULL || w != NULL || !graph_has_vertex(g, v) || !graph_has_vertex(g, w)) return false;
+    else {
+        //Find the node of vertex v
+        Node *src_node = NULL;
         for (int i = 0; i < g->nV; ++i) {
             if (strcmp(g->edges[i]->vertex, v) == 0) {
-                Node *src_node = g->edges[i];
-                for (Node *adj = src_node->next; adj != NULL; adj = adj->next) {
-                    if (strcmp(adj->vertex, w) == 0) {
-                        adj->weight = weight;
-                        return; 
-                    }
-                }
+                src_node = g->edges[i];
                 break; 
             }
         }
+
+        //Find the adjacent vertex w of vertex v
+        Node *adj = src_node->next;
+        while (adj!=NULL) {
+            if (strcmp(adj->vertex, w) == 0) return true;
+            adj = adj->next;
+        }
+        return false;
     }
 }
 
-size_t graph_get_edge(graph g, string source, string dest) {
-    if (g == NULL || source == NULL || dest == NULL) return 0;
-    for (int i = 0; i < g->nV; ++i) {
-        if (strcmp(g->edges[i]->vertex, source) == 0) {
-            Node *src_node = g->edges[i];
-            
-            for (Node *adj = src_node->next; adj != NULL; adj = adj->next) {
-                if (strcmp(adj->vertex, dest) == 0) {
-                    return adj->weight;
-                }
+void graph_set_edge(graph g, string v, string w, size_t weight) {
+    if (g!=NULL && v!=NULL && w!=NULL && graph_has_edge(g, v, w) && graph_has_vertex(g, v) && graph_has_vertex(g, w)) {
+        //Find the node of vertex v
+        Node *src_node = NULL;
+        for (int i = 0; i < g->nV; ++i) {
+            if (strcmp(g->edges[i]->vertex, v) == 0) {
+                src_node = g->edges[i];
+                break; 
             }
-            break; 
-        }
+        }        
+
+        //Find the adjacent vertex w of vertex v
+        Node *adj = src_node->next;
+        while (adj!=NULL) {
+            if (strcmp(adj->vertex, w) == 0) {
+                adj->weight = weight;
+                break;
+            }
+            adj = adj->next;
+        }        
     }
-    return 0; 
+}
+
+size_t graph_get_edge(graph g, string v, string w) {
+    if (g == NULL || v == NULL || w == NULL || !graph_has_vertex(g, v) || !graph_has_vertex(g, w)) return 0;
+    else {
+        Node *src_node = NULL;
+        for (int i = 0; i < g->nV; ++i) {
+            if (strcmp(g->edges[i]->vertex, v) == 0) {
+                src_node = g->edges[i];
+                break; 
+            }
+        }           
+        Node *adj = src_node->next;
+        while (adj!=NULL) {
+            if (strcmp(adj->vertex, w) == 0) {
+                return adj->weight;
+            }
+            adj = adj->next;
+        }
+        return 0;       
+    }
 }
 
 size_t graph_edges_count(graph g, string vertex) {
-    if (g == NULL || vertex == NULL) return 0;
-    for (int i = 0; i < g->nV; ++i) {
-        if (strcmp(g->edges[i]->vertex, vertex) == 0) {
-            size_t count = 0;
-            Node *src_node = g->edges[i];
-            for (Node *adj = src_node->next; adj != NULL; adj = adj->next) {
-                ++count;
+    if (g == NULL || vertex == NULL || !graph_has_vertex(g, vertex)) return 0;
+    else {
+        size_t count = 0;
+        Node *src_node = NULL;
+        for (int i = 0; i < g->nV; ++i) {
+            if (strcmp(g->edges[i]->vertex, vertex) == 0) {
+                src_node = g->edges[i];
+                break;
             }
-            return count;
         }
+        Node *adj = src_node->next;
+        while (adj!=NULL) {
+            count++;
+            adj = adj->next;
+        }
+        return count;
     }
-    return 0;
 }
