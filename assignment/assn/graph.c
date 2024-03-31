@@ -84,6 +84,17 @@ void graph_add_vertex(graph g, string vertex) {
     }
 }
 
+Node *find_source_node(graph g, string vertex) {
+    Node *src_node = NULL;
+    for (int i = 0; i < g->nV; ++i) {
+        if (strcmp(g->edges[i]->vertex, vertex) == 0) {
+            src_node = g->edges[i];
+            break;
+        }
+    }
+    return src_node;
+}
+
 bool graph_has_vertex(graph g , string vertex) {
     if (g==NULL || vertex == NULL) return false;
     else {
