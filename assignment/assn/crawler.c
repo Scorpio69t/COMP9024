@@ -21,6 +21,7 @@
 
 #include "list.h"
 #include "graph.h"
+#include "pagerank.h"
 
 /* resizable buffer */
 typedef struct memory {
@@ -68,17 +69,19 @@ int main(int argc, char **argv)
     /* NOTE: Uncomment this block once you have completed the 
         appropriate list functions */
     
-    //char ignore_url[BUFSIZ];
-    //printf("Enter a page to ignore or type 'done': ");
-    //while (scanf("%s", ignore_url)) {
+    // char ignore_url[BUFSIZ];
+    // printf("Enter a page to ignore or type 'done': ");
+    // while (scanf("%s", ignore_url)) {
     //    if (strcmp(ignore_url, "done") == 0) {
     //        break;
     //    }
     //    list_add(ignore_list, ignore_url);
     //    printf("Enter another page to ignore or type 'done': ");
-    //}
+    // }
     
-    graph_show(web, stdout, ignore_list);
+    // graph_show(web, stdout, ignore_list);
+    graph_pagerank(web, 0.85, 1e-6, ignore_list);
+    graph_show_pagerank(web, stdout, ignore_list);
     
     // Cleanup
     list_destroy(ignore_list);

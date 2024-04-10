@@ -3,12 +3,16 @@
 #include <assert.h>
 #include <string.h>
 #include <stdlib.h>
+#include <math.h>
 #include "graph.h"
 #include "list.h"
+#include "pagerank.h"
 
 typedef struct Node {
     string vertex;
     int weight;
+    double old_rank;
+    double page_rank;
     struct Node *next;
 } Node ;
 
@@ -84,8 +88,7 @@ void graph_add_vertex(graph g, string vertex) {
     }
 }
 
-Node *find_source_node(graph g, string vertex) {
-    Node *src_node = NULL;
+void *find_source_node(graph g, string vertex, Node *src_node) {
     for (int i = 0; i < g->nV; ++i) {
         if (strcmp(g->edges[i]->vertex, vertex) == 0) {
             src_node = g->edges[i];
@@ -119,7 +122,7 @@ void graph_add_edge(graph g, string v, string w, size_t weight) {
         assert(new_edge!=NULL);
 
         //Find source node of vertex v
-        src_node = find_source_node(g, v);
+        src_node = find_source_node(g, v, src_node);
 
         int data_length = strlen(w);
         new_edge->vertex = malloc((data_length+1)*sizeof(char));
@@ -140,11 +143,11 @@ void graph_add_edge(graph g, string v, string w, size_t weight) {
 }
 
 bool graph_has_edge(graph g, string v, string w) {
-    if (g != NULL || v != NULL || w != NULL || !graph_has_vertex(g, v) || !graph_has_vertex(g, w)) return false;
+    if (g != NULL && v != NULL && w != NULL && !graph_has_vertex(g, v) && !graph_has_vertex(g, w)) return false;
     else {
         //Find the node of vertex v
         Node *src_node = NULL;
-        src_node = find_source_node(g, v);
+        src_node = find_source_node(g, v, src_node);
 
         //Find the adjacent vertex w of vertex v
         Node *adj = src_node->next;
@@ -160,7 +163,7 @@ void graph_set_edge(graph g, string v, string w, size_t weight) {
     if (g!=NULL && v!=NULL && w!=NULL && graph_has_edge(g, v, w) && graph_has_vertex(g, v) && graph_has_vertex(g, w)) {
         //Find the node of vertex v
         Node *src_node = NULL;
-        src_node = find_source_node(g, v);     
+        src_node = find_source_node(g, v, src_node);     
 
         //Find the adjacent vertex w of vertex v
         Node *adj = src_node->next;
@@ -178,7 +181,7 @@ size_t graph_get_edge(graph g, string v, string w) {
     if (g == NULL || v == NULL || w == NULL || !graph_has_vertex(g, v) || !graph_has_vertex(g, w)) return 0;
     else {
         Node *src_node = NULL;
-        src_node = find_source_node(g, v);
+        src_node = find_source_node(g, v, src_node);
        
         Node *adj = src_node->next;
         while (adj!=NULL) {
@@ -196,7 +199,7 @@ size_t graph_edges_count(graph g, string vertex) {
     else {
         size_t count = 0;
         Node *src_node = NULL;
-        src_node = find_source_node(g, vertex);
+        src_node = find_source_node(g, vertex, src_node);
 
         Node *adj = src_node->next;
         while (adj!=NULL) {
@@ -204,5 +207,157 @@ size_t graph_edges_count(graph g, string vertex) {
             adj = adj->next;
         }
         return count;
+    }
+}
+
+bool check_condition(graph g, list ignore, double epsilon){
+    int n = g->nV;
+    int i;
+    for (i = 0; i<n;i++) {
+        Node *node = g->edges[i];
+        if (!list_contains(ignore, node->vertex)) {
+            if (fabs(node->page_rank - node->old_rank) <= epsilon) return false;
+        }
+    }
+    return true;
+}
+
+double round_to_three_decimal_places(double num) {
+    return round(num * 1000.0) / 1000.0;
+}
+
+double count_number_of_valid_vertex(graph g, list ignore){
+    int i;
+    int n=g->nV;
+    double count = 0.0;
+    for (i=0; i<n; i++) {
+        Node *node = g->edges[i];
+        node->old_rank = 0;
+        if (!list_contains(ignore, node->vertex)) {
+            count += 1.0;
+        }
+    }
+    return count;
+}
+
+
+void graph_pagerank(graph g, double dampling, double epsilon, list ignore) {
+    if (g!=NULL) {
+        int n=g->nV;
+        int i; 
+        double count = count_number_of_valid_vertex(g, ignore);
+        if (count > 0) {
+            //Assign page_rank for all nodes
+            for (i=0; i<n; i++){
+                Node *node = g->edges[i];
+                if (!list_contains(ignore, node->vertex)) {
+                    node->page_rank =(float) 1/count;
+                }
+            }
+            //Find edges have no outbound, it means len(g->edges[i]) - number of has_edge() in ignore
+            list stack_no_outbound = list_create();
+            for (i=0; i<n; i++) {
+                size_t adj_vertex_number;
+                Node *node = g->edges[i];
+                adj_vertex_number = graph_edges_count(g, node->vertex);
+                Node *adj = node->next;
+                    while (adj!=NULL) {
+                        if (list_contains(ignore, adj->vertex)) {
+                            adj_vertex_number--;
+                        }
+                        adj = adj->next;
+                    }
+                if (adj_vertex_number == 0 && !list_contains(ignore, node->vertex)) {
+                    list_enqueue(stack_no_outbound, node->vertex);
+                }
+            } 
+
+            while (check_condition(g, ignore, epsilon)) {
+                for (i=0; i<n; i++) {
+                    Node *node = g->edges[i];
+                    node->old_rank = node->page_rank;
+                }
+                double sink = 0.0;
+                size_t count_temp=0;
+                while (count_temp < list_length(stack_no_outbound)) {
+                    string v_no_outbound = list_dequeue(stack_no_outbound);
+                    list_enqueue(stack_no_outbound, v_no_outbound);
+                    Node *node = NULL;
+                    node = find_source_node(g, v_no_outbound, node);
+                    sink = sink + (dampling*((float) node->old_rank/count));
+                    count_temp++;
+                }
+                for (i=0; i<n; i++){
+                    Node *node = g->edges[i];
+                    if (!list_contains(ignore, node->vertex)) {
+                        node->page_rank = sink + ((1.0-dampling)/count);
+                        for (int j=0; j<n; j++) {
+                            Node *node_j = g->edges[j];
+                            size_t adj_vertex_number;
+                            adj_vertex_number = graph_edges_count(g, node_j->vertex);
+                            if (i!=j && graph_has_edge(g, node_j->vertex, node->vertex) && !list_contains(ignore, node_j->vertex)) {
+                                Node *adj = node_j->next;
+
+                                while (adj!=NULL) {
+                                    if (list_contains(ignore, adj->vertex)) {
+                                        adj_vertex_number--;
+                                    }
+                                    adj = adj->next;
+                                }
+                                node->page_rank = node->page_rank + ((dampling*node_j->old_rank) / adj_vertex_number);
+                            }
+                        }
+                    }
+                }
+            }
+            // list_destroy(stack_no_outbound);
+        }
+    }
+}
+
+void insertionSort(double array[], string index[], int n) {
+   int i;
+   for (i = 1; i < n; i++) {
+      double element = array[i];                 // for this element ...
+      int j = i-1;
+      string temp = index[i];
+      while (j >= 0 && array[j] < element) { // ... work down the ordered list
+         array[j+1] = array[j];               // ... moving elements up
+         index[j+1] = index[j];
+         j--;
+      }
+      array[j+1] = element;                   // and insert in correct position
+      index[j+1] = temp;
+   }
+}
+
+void graph_show_pagerank(graph g, FILE *f, list ignore) {
+    if (g!=NULL && g->nV!=0) {
+        if (g->nV!=0){
+            if (f==NULL) {
+                f = stdout;
+            }
+            double count = count_number_of_valid_vertex(g, ignore);
+            int n = (int) count;
+            string *index = malloc(n*sizeof(string));
+            assert(index!=NULL);
+            double *pagerank = calloc(n, sizeof(double));
+            assert(pagerank!=NULL);
+
+            int i = 0;
+            int j = 0;
+            while (j<g->nV) {
+                if (!list_contains(ignore, g->edges[j]->vertex)) {
+                    index[i] = g->edges[j]->vertex;
+                    pagerank[i] = g->edges[j]->page_rank;
+                    i++;
+                }
+                j++;
+            }
+            insertionSort(pagerank, index, n);
+            for (i=0; i<n; i++){
+                printf("%s: %.3f\n", index[i], pagerank[i]);
+            }
+        }
     }
 }
