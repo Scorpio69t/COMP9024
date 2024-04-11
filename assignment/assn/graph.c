@@ -36,8 +36,13 @@ graph graph_create(void) {
 void graph_destroy(graph g) {
     if (g != NULL) {
         for (int i=0; i<g->nV; i++) {
-            free(g->edges[i]->vertex);
-            free(g->edges[i]);
+            Node *current = g->edges[i];
+            while (current != NULL) {
+                Node *temp = current;
+                current = current->next;
+                free(temp->vertex);
+                free(temp);
+            }
         }
         free(g->edges);
         free(g);
@@ -123,7 +128,7 @@ void graph_add_edge(graph g, string v, string w, size_t weight) {
 
         //Find source node of vertex v
         src_node = find_source_node(g, v, src_node);
-
+        // new_edge->vertex = w;
         int data_length = strlen(w);
         new_edge->vertex = malloc((data_length+1)*sizeof(char));
         strcpy(new_edge->vertex, w);
@@ -148,7 +153,7 @@ bool graph_has_edge(graph g, string v, string w) {
         //Find the node of vertex v
         Node *src_node = NULL;
         src_node = find_source_node(g, v, src_node);
-
+        if (src_node==NULL) return false;
         //Find the adjacent vertex w of vertex v
         Node *adj = src_node->next;
         while (adj!=NULL) {
@@ -240,7 +245,6 @@ double count_number_of_valid_vertex(graph g, list ignore){
     return count;
 }
 
-
 void graph_pagerank(graph g, double dampling, double epsilon, list ignore) {
     if (g!=NULL) {
         int n=g->nV;
@@ -268,7 +272,7 @@ void graph_pagerank(graph g, double dampling, double epsilon, list ignore) {
                         adj = adj->next;
                     }
                 if (adj_vertex_number == 0 && !list_contains(ignore, node->vertex)) {
-                    list_enqueue(stack_no_outbound, node->vertex);
+                    list_push(stack_no_outbound, node->vertex);
                 }
             } 
 
@@ -278,14 +282,12 @@ void graph_pagerank(graph g, double dampling, double epsilon, list ignore) {
                     node->old_rank = node->page_rank;
                 }
                 double sink = 0.0;
-                size_t count_temp=0;
-                while (count_temp < list_length(stack_no_outbound)) {
-                    string v_no_outbound = list_dequeue(stack_no_outbound);
-                    list_enqueue(stack_no_outbound, v_no_outbound);
-                    Node *node = NULL;
-                    node = find_source_node(g, v_no_outbound, node);
-                    sink = sink + (dampling*((float) node->old_rank/count));
-                    count_temp++;
+                for (i=0; i<n; i++) {
+                    Node *node = g->edges[i];
+
+                    if (list_contains(stack_no_outbound, node->vertex)) {
+                        sink = sink + (dampling*((float) node->old_rank/count));
+                    }
                 }
                 for (i=0; i<n; i++){
                     Node *node = g->edges[i];
@@ -310,25 +312,31 @@ void graph_pagerank(graph g, double dampling, double epsilon, list ignore) {
                     }
                 }
             }
-            // list_destroy(stack_no_outbound);
+            list_destroy(stack_no_outbound);
         }
     }
 }
 
 void insertionSort(double array[], string index[], int n) {
-   int i;
-   for (i = 1; i < n; i++) {
-      double element = array[i];                 // for this element ...
-      int j = i-1;
-      string temp = index[i];
-      while (j >= 0 && array[j] < element) { // ... work down the ordered list
-         array[j+1] = array[j];               // ... moving elements up
-         index[j+1] = index[j];
-         j--;
-      }
-      array[j+1] = element;                   // and insert in correct position
-      index[j+1] = temp;
-   }
+    int i;
+    for (i = 1; i < n; i++) {
+        double element = array[i];
+        int j = i-1;
+        string temp = index[i];
+        while (j>=0 && array[j] < element) {
+            array[j+1] = array[j];
+            index[j+1] = index[j];
+            j--;
+        }
+
+        while (j>=0 && array[j] == element && strcmp(temp, index[j]) < 0) {
+            array[j+1] = array[j];
+            index[j+1] = index[j];
+            j--;
+        }
+        array[j+1] = element;
+        index[j+1] = temp;
+    }
 }
 
 void graph_show_pagerank(graph g, FILE *f, list ignore) {
@@ -358,6 +366,9 @@ void graph_show_pagerank(graph g, FILE *f, list ignore) {
             for (i=0; i<n; i++){
                 printf("%s: %.3f\n", index[i], pagerank[i]);
             }
+            free(index);
+            free(pagerank);
         }
     }
 }
+

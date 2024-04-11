@@ -40,7 +40,6 @@ void list_destroy(list L){
         }
         free(L);
         }
-
     }
 }
 
@@ -59,6 +58,7 @@ void list_push(list L, string s) {
     ListNode *node = malloc(sizeof(ListNode));
     size_t data_len = strlen(s);
     node->value = malloc((data_len + 1) * sizeof(char));
+    assert(node->value!=NULL);
     strcpy(node->value, s);
     node->next = L->top;
     L->top = node;
@@ -110,9 +110,10 @@ string list_dequeue(list L) {
         if (list_is_empty(L)) return NULL;
         else {
             ListNode *temp = L->bot;
-            string popped = temp->value;
+            string popped=temp->value;
+            // strcpy(popped, );
             L->bot = temp->next;
-            // free(temp);
+            free(temp);
             L->size--;
             return popped;
         }
