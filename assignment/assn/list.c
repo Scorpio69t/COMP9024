@@ -33,10 +33,10 @@ void list_destroy(list L){
         else {
         ListNode *current = L->top;
         while (current != NULL) {
-            ListNode *temp = current->next;
-            free(current->value);
-            free(current);
-            current = temp;
+            ListNode *temp = current;
+            current = current->next;
+            free(temp->value);
+            free(temp);
         }
         free(L);
         }
@@ -75,8 +75,11 @@ string list_pop(list L) {
             ListNode *temp = L->top;
             string popped = temp->value;
             L->top = temp->next;
-            free(temp);
             L->size--;
+            free(temp);
+            if (L->top == NULL) {
+                L->bot = NULL;
+            }
             return popped;
         }
     }
@@ -111,10 +114,12 @@ string list_dequeue(list L) {
         else {
             ListNode *temp = L->bot;
             string popped=temp->value;
-            // strcpy(popped, );
             L->bot = temp->next;
-            free(temp);
             L->size--;
+            free(temp);
+            if (L->bot == NULL) {
+                L->top = NULL;
+            }
             return popped;
         }
     }
