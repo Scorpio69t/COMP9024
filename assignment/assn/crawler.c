@@ -22,6 +22,7 @@
 #include "list.h"
 #include "graph.h"
 #include "pagerank.h"
+#include "dijkstra.h"
 /* resizable buffer */
 typedef struct memory {
     char *buf;
@@ -78,11 +79,12 @@ int main(int argc, char **argv)
     //    printf("Enter another page to ignore or type 'done': ");
     //}
     
-    graph_show(web, stdout, ignore_list);
     
+    // graph_show(web, stdout, ignore_list);
+    // graph_pagerank(web, 0.85, 1e-6, ignore_list);
+    // graph_show_pagerank(web, stdout, ignore_list);
+    graph_shortest_path(web, "", ignore_list);
     // Cleanup
-    graph_pagerank(web, 0.85, 1e-6, ignore_list);
-    graph_show_pagerank(web, stdout, ignore_list);
     list_destroy(ignore_list);
     graph_destroy(web);
 

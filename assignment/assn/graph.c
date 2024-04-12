@@ -1,7 +1,7 @@
 #include "graph.h"
+#include "dijkstra.h"
 #include "list.h"
 #include "pagerank.h"
-#include "dijkstra.h"
 #include <assert.h>
 #include <math.h>
 #include <stdbool.h>
@@ -9,12 +9,22 @@
 #include <stdlib.h>
 #include <string.h>
 
+#define VERY_HIGH_VALUE 999999
+
 typedef struct Node {
+    // for subset 1,2
     string vertex;
     int weight;
+    struct Node *next;
+
+    // for subset 3
     double old_rank;
     double page_rank;
-    struct Node *next;
+
+    // for subset 4
+    bool visited;
+    int dist;
+    string pred;
 } Node;
 
 typedef struct Graph_Repr {
@@ -392,12 +402,77 @@ void graph_show_pagerank(graph g, FILE *f, list ignore) {
     }
 }
 
-// void graph_shortest_path(graph g, string v, list ignore_list) {
+void graph_shortest_path(graph g, string v, list ignore_list) {
+    if (g != NULL && v != NULL && graph_has_vertex(g, v)) {
+        Node *src_node_2 = NULL;
+        src_node_2 = find_source_node(g, v, src_node_2);
+        int n = g->nV;
+        int i;
+        list queue = list_create();
+        for (i = 0; i < n; i++) {
+            g->edges[i]->dist = VERY_HIGH_VALUE;
+            g->edges[i]->pred = "";
+            if (list_contains(ignore_list, g->edges[i]->vertex)) {
+                g->edges[i]->visited = true;
+            } else {
+                g->edges[i]->visited = false;
+            }
+        }
+        src_node_2->dist = 0;
+        list_enqueue(queue, src_node_2->vertex);
+        while (!list_is_empty(queue)) {
+            string s = list_dequeue(queue);
+            Node *src_node = NULL;
+            src_node = find_source_node(g, s, src_node);
+            free(s);
+            if (!src_node->visited) {
+                src_node->visited = true;
+                Node *current = src_node->next;
+                while (current != NULL) {
+                    list_enqueue(queue, current->vertex);
+                    Node *update_node = NULL;
+                    update_node =
+                        find_source_node(g, current->vertex, update_node);
+                    if (strlen(update_node->pred) == 0 &&
+                        !update_node->visited) {
+                        update_node->pred = src_node->vertex;
+                        update_node->dist = src_node->dist + 1;
+                    } else if (strlen(update_node->pred) > 0 &&
+                               !update_node->visited) {
+                        if (src_node->dist + 1 < update_node->dist) {
+                            update_node->dist = src_node->dist + 1;
+                            update_node->pred = src_node->vertex;
+                        }
+                    }
+                    current = current->next;
+                }
+            }
+        }
+        list_destroy(queue);
+    }
+}
 
-// }
-
-// void graph_show_path(graph g, FILE *f, string vertex, list ignore_list) {
-//     printf("test");
-
-// }
-
+void print(graph g, string v, list ignore_list) {
+    Node *src_node = NULL;
+    src_node = find_source_node(g, v, src_node);
+    if (!list_contains(ignore_list, src_node->vertex)) {
+        if (src_node->dist == 0) {
+            printf("%s\n", src_node->vertex);
+        } else {
+            print(g, src_node->pred, ignore_list);
+            printf(" -> %s\n", src_node->vertex);
+        }
+    }
+}
+void graph_show_path(graph g, FILE *f, string vertex, list ignore_list) {
+    if (g != NULL && vertex != NULL && graph_has_vertex(g, vertex)) {
+        if (f == NULL) {
+            f = stdout;
+        }
+        Node *src_node = NULL;
+        src_node = find_source_node(g, vertex, src_node);
+        if (src_node->dist != VERY_HIGH_VALUE) {
+            print(g, vertex, ignore_list);
+        }
+    }
+}
